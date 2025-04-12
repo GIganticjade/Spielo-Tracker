@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spielo Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 p-6">
+  <div class="max-w-4xl mx-auto space-y-6">
+    <h1 class="text-2xl font-bold">🎰 Spielo Tracker</h1>
+
+    <form id="spielo-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded shadow">
+      <input type="date" name="date" class="border p-2 rounded" />
+      <input type="number" step="0.01" name="bet" placeholder="Einsatz (€)" class="border p-2 rounded" />
+      <input type="number" step="0.01" name="result" placeholder="Rausgeholt (€)" class="border p-2 rounded" />
+      <input type="text" name="game" placeholder="Spielname" class="border p-2 rounded" />
+      <input type="text" name="duration" placeholder="Dauer (z. B. 1h 20min)" class="border p-2 rounded" />
+      <input type="text" name="location" placeholder="Ort / Spielhalle" class="border p-2 rounded" />
+      <textarea name="notes" placeholder="Notizen" class="border p-2 rounded md:col-span-2"></textarea>
+      <button type="submit" class="bg-blue-600 text-white py-2 rounded md:col-span-2 hover:bg-blue-700">Eintrag speichern</button>
+    </form>
+
+    <div class="bg-white p-4 rounded shadow">
+      <h2 class="text-xl font-semibold mb-2">📊 Statistik</h2>
+      <p><strong>Gesamteinsätze:</strong> <span id="total-bet">0.00</span> €</p>
+      <p><strong>Gesamtergebnis:</strong> <span id="total-result">0.00</span> €</p>
+      <p><strong>Bilanz:</strong> <span id="net-result">0.00</span> €</p>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-semibold mb-2">🗂 Alle Einträge</h2>
+      <div id="entry-list" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('spielo-form');
+    const entryList = document.getElementById('entry-list');
+    const totalBetEl = document.getElementById('total-bet');
+    const totalResultEl = document.getElementById('total-result');
+    const netResultEl = document.getElementById('net-result');
+
+    let entries = JSON.parse(localStorage.getItem('spielo-entries') || '[]');
+
+    function updateStats() {
+      const totalBet = entries.reduce((sum, e) => sum + parseFloat(e.bet || 0), 0);
+      const totalResult = entries.reduce((sum, e) => sum + parseFloat(e.result || 0), 0);
+      const net = totalResult - totalBet;
+
+      totalBetEl.textContent = totalBet.toFixed(2);
+      totalResultEl.textContent = totalResult.toFixed(2);
+      netResultEl.textContent = net.toFixed(2);
+    }
+
+    function renderEntries() {
+      entryList.innerHTML = '';
+      entries.forEach((e, index) => {
+        const card = document.createElement('div');
+        card.className = 'bg-white p-4 rounded shadow';
+        card.innerHTML = `
+          <p><strong>📅 Datum:</strong> ${new Date(e.date).toLocaleDateString()}</p>
+          <p><strong>💶 Einsatz:</strong> ${e.bet} €</p>
+          <p><strong>🎯 Ergebnis:</strong> ${e.result} €</p>
+          <p><strong>🎮 Spiel:</strong> ${e.game}</p>
+          <p><strong>⏱ Dauer:</strong> ${e.duration}</p>
+          <p><strong>📍 Ort:</strong> ${e.location}</p>
+          ${e.notes ? `<p><strong>📝 Notizen:</strong> ${e.notes}</p>` : ''}
+        `;
+        entryList.appendChild(card);
+      });
+    }
+
+    function saveAndRender() {
+      localStorage.setItem('spielo-entries', JSON.stringify(entries));
+      renderEntries();
+      updateStats();
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const entry = Object.fromEntries(data.entries());
+      entry.date = entry.date || new Date().toISOString();
+      entries.push(entry);
+      form.reset();
+      saveAndRender();
+    });
+
+    saveAndRender();
+  </script>
+</body>
+</html>
