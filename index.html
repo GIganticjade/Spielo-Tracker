@@ -71,23 +71,33 @@
       });
     }
 
-    function saveAndRender() {
-      localStorage.setItem('spielo-entries', JSON.stringify(entries));
+    async function fetchEntries() {
+      const response = await fetch('/api/entries');
+      entries = await response.json();
       renderEntries();
       updateStats();
     }
 
-    form.addEventListener('submit', (e) => {
+    async function saveEntry(entry) {
+      await fetch('/api/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+      });
+    }
+
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const data = new FormData(form);
       const entry = Object.fromEntries(data.entries());
       entry.date = entry.date || new Date().toISOString();
       entries.push(entry);
       form.reset();
-      saveAndRender();
+      await saveEntry(entry);
+      fetchEntries();
     });
 
-    saveAndRender();
+    fetchEntries();
   </script>
 </body>
 </html>
